@@ -288,10 +288,6 @@ type ns0 struct {
 	Ok okStruct `json:"ok"`
 }
 
-const (
-	TOKEN = "8a9ecc88-c97f-4d18-a78b-d7f13ed408b6"
-)
-
 type TokenNamespaces struct {
 	Namespaces []string `json:"namespaces"`
 }
@@ -300,15 +296,16 @@ func rdeiGet(sessionId string) (*TokenNamespaces, error) {
 
 	url := os.Getenv("RDEI_URL_NAMESPACE")
 	if url == "" {
-		url = "https://stage-api.rdei.comcast.net/v1/tokens/namespaces/" + sessionId
+		url = "https://stage-api.rdei.comcast.net"
 	}
+	url += "/v1/tokens/namespaces/" + sessionId
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating Request. %s", err.Error())
 	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", TOKEN))
+	token := os.Getenv("RDEI_TOKEN")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	req.Header.Add("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -320,7 +317,7 @@ func rdeiGet(sessionId string) (*TokenNamespaces, error) {
 	body, err := io.ReadAll(resp.Body)
 
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("rdeiGet: code=%v, url=%s, token=%s,  response: %s", resp.StatusCode, url, TOKEN, string(body))
+		return nil, fmt.Errorf("rdeiGet: code=%v, url=%s, token=%s,  response: %s", resp.StatusCode, url, token, string(body))
 	}
 
 	out := &TokenNamespaces{}
