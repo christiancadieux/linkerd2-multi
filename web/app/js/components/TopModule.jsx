@@ -97,6 +97,7 @@ class TopModule extends React.Component {
           showTapEnabledWarning: true,
         });
       } else {
+        console.log('WEBSECOKET');
         this.setState({
           error: {
             error: `Websocket close error [${e.code}: ${wsCloseCodes[e.code]}] ${e.reason ? ':' : ''} ${e.reason}`,

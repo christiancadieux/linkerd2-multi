@@ -133,6 +133,7 @@ class Tap extends React.Component {
           showTapEnabledWarning: true,
         });
       } else {
+        console.log('WEBSOCKET2');
         this.setState({
           error: {
             error: `Websocket close error [${e.code}: ${wsCloseCodes[e.code]}] ${e.reason ? ':' : ''} ${e.reason}`,

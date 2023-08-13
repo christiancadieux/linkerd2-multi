@@ -2,7 +2,7 @@ UI: http://10.54.213.147:8084/namespaces
 
 
 when UI url is used with a lsid=.. , the UI will only show the namespace that are allowed by this lsid.
-The lsid is the user toked used to access the RDEi UI and the facility_id of the cluster .
+The lsid is the userid  and the facility_id of the cluster .
 
 Ex: 
 Linkerd UI: /namespaces?lsid=99fa05db-8df9-4a32-93c8-a9fd5f976489-88d40e18-da23-41f8-b886-fca67688c6dd

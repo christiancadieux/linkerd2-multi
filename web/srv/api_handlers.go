@@ -143,12 +143,9 @@ func processSessionId(w http.ResponseWriter, req *http.Request) string {
 	// fmt.Println("VALUES=", queryValues)
 	sessionId := queryValues.Get(SIDNAME)
 	fmt.Println("queryValue=", sessionId)
-	if len(sessionId) != 36*2+1 {
-		return ""
-	}
 
 	if sessionId != "" {
-		// fmt.Printf("read %s=%s \n", SIDNAME, sessionId)
+		fmt.Printf("setCookie %s=%s \n", SIDNAME, sessionId)
 		setCookie(w, SIDNAME, sessionId)
 	} else {
 		idCookie, err := req.Cookie(SIDNAME)
@@ -237,7 +234,7 @@ func (h *handler) handleAPIStat(w http.ResponseWriter, req *http.Request, p http
 
 	// Marshal result into json and cache it
 	json, err := pbMarshaler.Marshal(result)
-	fmt.Println("CHECK SESSIONID", sessionId)
+	fmt.Printf("CHECK SESSIONID %s, ns=%s", sessionId, requestParams.Namespace)
 	if sessionId != "" {
 		if requestParams.ResourceType == "namespace" && (requestParams.Namespace == "all" || requestParams.AllNamespaces) {
 			json = filterNamespaces(allowedNamespaces, json)
@@ -294,7 +291,7 @@ type TokenNamespaces struct {
 
 func rdeiGet(sessionId string) (*TokenNamespaces, error) {
 
-	url := os.Getenv("RDEI_URL_NAMESPACE")
+	url := os.Getenv("RDEI_URL")
 	if url == "" {
 		url = "https://stage-api.rdei.comcast.net"
 	}
@@ -366,7 +363,7 @@ func checkNS(allowedNamespaces map[string]int, ns string) bool {
 	if ns == "" || ns == "all" {
 		return true
 	}
-	if _, ok := allowedNamespaces[ns]; !ok {
+	if _, ok := allowedNamespaces[ns]; ok {
 		return true
 	}
 	return false

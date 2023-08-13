@@ -161,7 +161,7 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
 
   const urlsForResource = (type, namespace, includeTcp) => {
     // Traffic Performance Summary. This retrieves stats for the given resource.
-    console.log('LOADFROMSERVER', window.location.search);
+    console.log('urlsForResource', window.location.search);
     const lsidOff = window.location.search.indexOf('lsid=');
     let resourceUrl = `/api/tps-reports?resource_type=${type}`;
     if (_isEmpty(namespace) || namespace === '_all') {
@@ -182,6 +182,7 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
   const urlsForResourceNoStats = (type, namespace) => {
     // Traffic Performance Summary. This retrieves (non-Prometheus) stats for the given resource.
     let resourceUrl = `/api/tps-reports?skip_stats=true&resource_type=${type}`;
+    console.log('urlsForResourceNoStats', window.location.search);
     const lsidOff = window.location.search.indexOf('lsid=');
     if (_isEmpty(namespace) || namespace === '_all') {
       resourceUrl += '&all_namespaces=true';
