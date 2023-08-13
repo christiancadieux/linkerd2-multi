@@ -78,7 +78,7 @@ class TopRoutes extends React.Component {
       services: [],
       namespaces: ['default'],
       resourcesByNs: {},
-      pollingInterval: 5000,
+      pollingInterval: 10000,
       pendingRequests: false,
       requestInProgress: false,
     };

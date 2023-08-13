@@ -42,7 +42,7 @@ if (proxyPathMatch) {
   pathPrefix = proxyPathMatch[0];
 }
 
-let defaultNamespace = 'default';
+let defaultNamespace = 'select';
 const pathArray = window.location.pathname.split('/');
 
 // if the current URL path specifies a namespace, this should become the

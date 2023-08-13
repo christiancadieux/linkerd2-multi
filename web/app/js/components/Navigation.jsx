@@ -282,7 +282,7 @@ class NavigationBase extends React.Component {
     Promise.all(this.api.getCurrentPromises())
       .then(([allNs]) => {
         // add "All Namespaces" to the options
-        let namespaces = [{ name: '_all', key: 'ns-all' }];
+        let namespaces = []; // { name: '_all', key: 'ns-all' }];
         namespaces = namespaces.concat(processSingleResourceRollup(allNs));
         this.setState({
           namespaces,

@@ -30,7 +30,7 @@ class Namespaces extends React.Component {
 
     return {
       ns,
-      pollingInterval: 2000,
+      pollingInterval: 20000,
       metrics: {},
       pendingRequests: false,
       loaded: false,

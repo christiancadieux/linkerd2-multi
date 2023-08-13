@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -125,11 +127,71 @@ func (h *handler) handleAPIServices(w http.ResponseWriter, req *http.Request, p 
 	renderJSONPb(w, services)
 }
 
+func setCookie(w http.ResponseWriter, name, value string) {
+	expiration := time.Now().Add(1000 * time.Hour)
+	cookie := http.Cookie{Name: name, Value: value, Expires: expiration}
+	http.SetCookie(w, &cookie)
+	log.Print(cookie)
+}
+
+const (
+	SIDNAME = "lsid"
+)
+
+func processSessionId(w http.ResponseWriter, req *http.Request) string {
+	queryValues := req.URL.Query()
+	// fmt.Println("VALUES=", queryValues)
+	sessionId := queryValues.Get(SIDNAME)
+	fmt.Println("queryValue=", sessionId)
+	if len(sessionId) != 36*2+1 {
+		return ""
+	}
+
+	if sessionId != "" {
+		// fmt.Printf("read %s=%s \n", SIDNAME, sessionId)
+		setCookie(w, SIDNAME, sessionId)
+	} else {
+		idCookie, err := req.Cookie(SIDNAME)
+		if err == nil {
+			sessionId = idCookie.Value
+			fmt.Println("Read Cookie", sessionId)
+		} else {
+			fmt.Println("FAILED TO READ COOKIE", err)
+		}
+	}
+	return sessionId
+}
+
 func (h *handler) handleAPIStat(w http.ResponseWriter, req *http.Request, p httprouter.Params) {
 	// Try to get stat summary from cache using the query as key
+
+	locked := false
+	if os.Getenv("RDEI_TENANT_LOCK") == "Y" {
+		locked = true
+	}
+	sessionId := processSessionId(w, req)
+
+	if locked && sessionId == "" {
+		renderJSONError(w, fmt.Errorf("SessionId is required"), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("sessionId=", sessionId)
+
+	var err error
+	allowedNamespaces := map[string]int{}
+	if sessionId != "" {
+		allowedNamespaces, err = loadAllowedNamespaces(sessionId)
+		if err != nil {
+			renderJSONError(w, fmt.Errorf("loadAllowedNamespaces %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+	fmt.Println("ALLOWED NAMESPACES=", len(allowedNamespaces))
+
 	cachedResultJSON, ok := h.statCache.Get(req.URL.RawQuery)
 	if ok {
 		// Cache hit, render cached json result
+		// fmt.Println("JSON=", string(cachedResultJSON.([]byte)))
 		renderJSONBytes(w, cachedResultJSON.([]byte))
 		return
 	}
@@ -158,14 +220,16 @@ func (h *handler) handleAPIStat(w http.ResponseWriter, req *http.Request, p http
 	if requestParams.ResourceType == "" {
 		requestParams.ResourceType = defaultResourceType
 	}
-
+	fmt.Println("requestParams.ResourceType ", requestParams.ResourceType, "ns=", requestParams.Namespace)
 	statRequest, err := vizUtil.BuildStatSummaryRequest(requestParams)
+
 	if err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	result, err := h.apiClient.StatSummary(req.Context(), statRequest)
+
 	if err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
 		return
@@ -173,6 +237,16 @@ func (h *handler) handleAPIStat(w http.ResponseWriter, req *http.Request, p http
 
 	// Marshal result into json and cache it
 	json, err := pbMarshaler.Marshal(result)
+	fmt.Println("CHECK SESSIONID", sessionId)
+	if sessionId != "" {
+		if requestParams.ResourceType == "namespace" && (requestParams.Namespace == "all" || requestParams.AllNamespaces) {
+			json = filterNamespaces(allowedNamespaces, json)
+
+		} else if !checkNS(allowedNamespaces, requestParams.Namespace) {
+			renderJSONError(w, fmt.Errorf("Invalid Namespace"), http.StatusInternalServerError)
+			return
+		}
+	}
 	if err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
 		return
@@ -183,6 +257,167 @@ func (h *handler) handleAPIStat(w http.ResponseWriter, req *http.Request, p http
 	h.statCache.SetDefault(req.URL.RawQuery, resultJSON.Bytes())
 
 	renderJSONBytes(w, resultJSON.Bytes())
+}
+
+type ns struct {
+	Ok struct {
+		StatTables []struct {
+			PodGroup struct {
+				Rows []struct {
+					Resource struct {
+						Name string `json:"name"`
+					} `json:"resource"`
+				} `json:"rows"`
+			} `json:"podGroup"`
+		} `json:"statTables"`
+	} `json:"ok"`
+}
+
+type podGroup struct {
+	Rows []interface{} `json:"rows"`
+}
+
+type statTable struct {
+	PodGroup podGroup `json:"podGroup"`
+}
+type okStruct struct {
+	StatTables []statTable `json:"statTables"`
+}
+
+type ns0 struct {
+	Ok okStruct `json:"ok"`
+}
+
+const (
+	TOKEN = "8a9ecc88-c97f-4d18-a78b-d7f13ed408b6"
+)
+
+type TokenNamespaces struct {
+	Namespaces []string `json:"namespaces"`
+}
+
+func rdeiGet(sessionId string) (*TokenNamespaces, error) {
+
+	url := os.Getenv("RDEI_URL_NAMESPACE")
+	if url == "" {
+		url = "https://stage-api.rdei.comcast.net/v1/tokens/namespaces/" + sessionId
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating Request. %s", err.Error())
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", TOKEN))
+	req.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("rdeiGet: code=%v, url=%s, token=%s,  response: %s", resp.StatusCode, url, TOKEN, string(body))
+	}
+
+	out := &TokenNamespaces{}
+	err = json.Unmarshal(body, &out)
+	fmt.Printf("NAMESPACES=%+v \n", len(out.Namespaces))
+	return out, nil
+}
+
+// VALIDATE NAMESPACES AGAINST RDEI
+
+type nsList struct {
+	Namespaces map[string]int
+	LastUpdate time.Time
+}
+
+var AllowedNamespaces = map[string]nsList{}
+var AllowedNamespacesLock sync.Mutex
+
+func loadAllowedNamespaces(sessionId string) (map[string]int, error) {
+	AllowedNamespacesLock.Lock()
+	defer AllowedNamespacesLock.Unlock()
+
+	// TRY CACHE
+	if v, ok := AllowedNamespaces[sessionId]; ok {
+		now := time.Now()
+		if now.Sub(v.LastUpdate) < 10*time.Minute {
+			// fmt.Printf("Using namespaces cache count= %+v \n", len(v.Namespaces))
+			return v.Namespaces, nil
+		}
+	}
+
+	namespaces, err := rdeiGet(sessionId)
+	if err != nil {
+		return nil, err
+	}
+	nslist := map[string]int{}
+	for _, n := range namespaces.Namespaces {
+		nslist[n] = 1
+	}
+	AllowedNamespaces[sessionId] = nsList{LastUpdate: time.Now(), Namespaces: nslist}
+	// fmt.Printf("new nslist= %+v \n", len(nslist))
+	return nslist, nil
+}
+
+func checkNS(allowedNamespaces map[string]int, ns string) bool {
+	if ns == "" || ns == "all" {
+		return true
+	}
+	if _, ok := allowedNamespaces[ns]; !ok {
+		return true
+	}
+	return false
+}
+
+func filterNamespaces(allowedNamespaces map[string]int, res []byte) []byte {
+	// fmt.Println("FILTER_RES=", string(res))
+	nss := ns{}
+	nss0 := ns0{}
+
+	results := ns0{okStruct{}}
+	results.Ok.StatTables = []statTable{}
+	results.Ok.StatTables = append(results.Ok.StatTables, statTable{})
+	results.Ok.StatTables[0].PodGroup.Rows = []interface{}{}
+
+	err := json.Unmarshal(res, &nss)
+
+	if err != nil {
+		fmt.Println("filterNamespaces error", err)
+		return res
+	}
+	err = json.Unmarshal(res, &nss0)
+
+	if err != nil {
+		fmt.Println("filterNamespaces error nss0", err)
+		return res
+	}
+
+	if nss.Ok.StatTables == nil || len(nss.Ok.StatTables) == 0 {
+		fmt.Println("filterNamespaces StatTables nil")
+		return res
+	}
+	filteredRows := []interface{}{}
+	for ix, ns := range nss.Ok.StatTables[0].PodGroup.Rows {
+		if _, ok := allowedNamespaces[ns.Resource.Name]; !ok {
+			continue
+		}
+		filteredRows = append(filteredRows, nss0.Ok.StatTables[0].PodGroup.Rows[ix])
+		// results.Ok.StatTables[0].PodGroup.Rows = append(results.Ok.StatTables[0].PodGroup.Rows, nss0.Ok.StatTables[0].PodGroup.Rows[ix])
+		// fmt.Println("Namespace=", ns.Resource.Name)
+	}
+	results.Ok.StatTables[0].PodGroup.Rows = filteredRows
+	results_bytes, err := json.Marshal(results)
+	if err != nil {
+		fmt.Println("filterNamespaces error nss0", err)
+		return res
+	}
+	return results_bytes
 }
 
 func (h *handler) handleAPITopRoutes(w http.ResponseWriter, req *http.Request, p httprouter.Params) {

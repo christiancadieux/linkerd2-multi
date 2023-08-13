@@ -161,8 +161,9 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
 
   const urlsForResource = (type, namespace, includeTcp) => {
     // Traffic Performance Summary. This retrieves stats for the given resource.
+    console.log('LOADFROMSERVER', window.location.search);
+    const lsidOff = window.location.search.indexOf('lsid=');
     let resourceUrl = `/api/tps-reports?resource_type=${type}`;
-
     if (_isEmpty(namespace) || namespace === '_all') {
       resourceUrl += '&all_namespaces=true';
     } else {
@@ -171,20 +172,26 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
     if (includeTcp) {
       resourceUrl += '&tcp_stats=true';
     }
-
+    if (lsidOff > 0) {
+      const lsid = window.location.search.substring(lsidOff + 5);
+      resourceUrl += `&lsid=${lsid}`;
+    }
     return resourceUrl;
   };
 
   const urlsForResourceNoStats = (type, namespace) => {
     // Traffic Performance Summary. This retrieves (non-Prometheus) stats for the given resource.
     let resourceUrl = `/api/tps-reports?skip_stats=true&resource_type=${type}`;
-
+    const lsidOff = window.location.search.indexOf('lsid=');
     if (_isEmpty(namespace) || namespace === '_all') {
       resourceUrl += '&all_namespaces=true';
     } else {
       resourceUrl += `&namespace=${namespace}`;
     }
-
+    if (lsidOff > 0) {
+      const lsid = window.location.search.substring(lsidOff + 5);
+      resourceUrl += `&lsid=${lsid}`;
+    }
     return resourceUrl;
   };
 

@@ -198,6 +198,9 @@ export const linkerdLogoOnly = (
 );
 
 export const linkerdWordLogo = (
+  <h2>RDEI - LINKERD</h2>
+);
+export const linkerdWordLogo0 = (
   <svg className="linkerd-word-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1092.4 233.7">
     <g id="Layer_1">
       <path
