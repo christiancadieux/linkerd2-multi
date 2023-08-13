@@ -154,14 +154,38 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
     }
     return apiFetch(extensionPath);
   };
-
+  /* eslint prefer-template: "warn" */
+  function SetCookie(name, value, mins) {
+    let expires = '';
+    if (mins) {
+      const date = new Date();
+      date.setTime(date.getTime() + (mins * 60 * 1000));
+      const dd = date.toUTCString();
+      expires = `; expires=${dd}`;
+    }
+    document.cookie = name + '=' + (value || '') + expires + '; path=/';
+  }
+  function GetCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i += 1) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1, c.length);
+      }
+      if (c.indexOf(nameEQ) === 0) {
+        return c.substring(nameEQ.length, c.length);
+      }
+    }
+    return null;
+  }
   const fetchResourceDefinition = (namespace, resourceType, resourceName) => {
     return apiFetchYAML(`/api/resource-definition?namespace=${namespace}&resource_type=${resourceType}&resource_name=${resourceName}`);
   };
 
   const urlsForResource = (type, namespace, includeTcp) => {
     // Traffic Performance Summary. This retrieves stats for the given resource.
-    console.log('urlsForResource', window.location.search);
+    // console.log('urlsForResource', window.location.search);
     const lsidOff = window.location.search.indexOf('lsid=');
     let resourceUrl = `/api/tps-reports?resource_type=${type}`;
     if (_isEmpty(namespace) || namespace === '_all') {
@@ -174,7 +198,14 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
     }
     if (lsidOff > 0) {
       const lsid = window.location.search.substring(lsidOff + 5);
+      SetCookie('lsid', lsid, 60);
       resourceUrl += `&lsid=${lsid}`;
+    } else {
+      const lsid = GetCookie('lsid');
+      if (lsid) {
+        console.log('got cookie', lsid);
+        resourceUrl += `&lsid=${lsid}`;
+      }
     }
     return resourceUrl;
   };
@@ -182,7 +213,7 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
   const urlsForResourceNoStats = (type, namespace) => {
     // Traffic Performance Summary. This retrieves (non-Prometheus) stats for the given resource.
     let resourceUrl = `/api/tps-reports?skip_stats=true&resource_type=${type}`;
-    console.log('urlsForResourceNoStats', window.location.search);
+    // console.log('urlsForResourceNoStats', window.location.search);
     const lsidOff = window.location.search.indexOf('lsid=');
     if (_isEmpty(namespace) || namespace === '_all') {
       resourceUrl += '&all_namespaces=true';
@@ -191,7 +222,14 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
     }
     if (lsidOff > 0) {
       const lsid = window.location.search.substring(lsidOff + 5);
+      SetCookie('lsid', lsid, 60);
       resourceUrl += `&lsid=${lsid}`;
+    } else {
+      const lsid = GetCookie('lsid');
+      if (lsid) {
+        console.log('got cookie', lsid);
+        resourceUrl += `&lsid=${lsid}`;
+      }
     }
     return resourceUrl;
   };

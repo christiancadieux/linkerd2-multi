@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -128,7 +129,15 @@ func (h *handler) handleAPIServices(w http.ResponseWriter, req *http.Request, p 
 }
 
 func setCookie(w http.ResponseWriter, name, value string) {
-	expiration := time.Now().Add(1000 * time.Hour)
+	dur := os.Getenv("SESSION_MINS")
+	dur_m := int64(60)
+	if dur != "" {
+		v, err := strconv.ParseInt(dur, 10, 32)
+		if err == nil {
+			dur_m = v
+		}
+	}
+	expiration := time.Now().Add(time.Duration(dur_m) * time.Minute)
 	cookie := http.Cookie{Name: name, Value: value, Expires: expiration}
 	http.SetCookie(w, &cookie)
 	log.Print(cookie)
@@ -139,6 +148,14 @@ const (
 )
 
 func processSessionId(w http.ResponseWriter, req *http.Request) string {
+	queryValues := req.URL.Query()
+	// fmt.Println("VALUES=", queryValues)
+	sessionId := queryValues.Get(SIDNAME)
+	fmt.Println("queryValue=", sessionId)
+	return sessionId
+}
+
+func processSessionId0(w http.ResponseWriter, req *http.Request) string {
 	queryValues := req.URL.Query()
 	// fmt.Println("VALUES=", queryValues)
 	sessionId := queryValues.Get(SIDNAME)
@@ -352,6 +369,9 @@ func loadAllowedNamespaces(sessionId string) (map[string]int, error) {
 	}
 	nslist := map[string]int{}
 	for _, n := range namespaces.Namespaces {
+		if strings.HasPrefix(n, "kb-deployment-") {
+			continue
+		}
 		nslist[n] = 1
 	}
 	AllowedNamespaces[sessionId] = nsList{LastUpdate: time.Now(), Namespaces: nslist}
@@ -360,7 +380,7 @@ func loadAllowedNamespaces(sessionId string) (map[string]int, error) {
 }
 
 func checkNS(allowedNamespaces map[string]int, ns string) bool {
-	if ns == "" || ns == "all" {
+	if ns == "" || ns == "all" || ns == "select" {
 		return true
 	}
 	if _, ok := allowedNamespaces[ns]; ok {
