@@ -136,6 +136,7 @@
   "serviceMeshInstalledMsg": "The service mesh was successfully installed!",
   "sidebarHeadingCluster": "Cluster",
   "sidebarHeadingTools": "Tools",
+  "currentNamespace": "Current Namespace",
   "sidebarHeadingWorkloads": "Workloads",
   "statusExplanationGood": "is up and running",
   "statusExplanationInMesh": "Added to mesh",

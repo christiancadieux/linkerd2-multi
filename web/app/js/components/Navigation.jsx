@@ -133,7 +133,7 @@ const styles = theme => {
       backgroundColor: grey[400],
       marginLeft: `${drawerWidth * 0.075}px`,
       marginRight: `${drawerWidth * 0.075}px`,
-      marginTop: '11px',
+      marginTop: '2px',
       width: `${drawerWidth * 0.85}px`,
     },
     namespaceChangeButtonInputRoot: {
@@ -177,8 +177,8 @@ const styles = theme => {
     sidebarHeading: {
       color: grey[500],
       outline: 'none',
-      paddingTop: '9px',
-      paddingBottom: '9px',
+      paddingTop: '6px',
+      paddingBottom: '0px',
       marginLeft: `${drawerWidth * 0.09}px`,
     },
     badge: {
@@ -499,6 +499,10 @@ class NavigationBase extends React.Component {
         </MenuList>
 
         <Divider />
+
+        <Typography variant="button" component="div" className={classes.sidebarHeading}>
+          <Trans>currentNamespace</Trans>
+        </Typography>
 
         <Autocomplete
           id="namespace-autocomplete"
