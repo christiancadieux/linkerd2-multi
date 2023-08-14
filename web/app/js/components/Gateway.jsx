@@ -21,7 +21,7 @@ class Gateways extends React.Component {
     this.handleApiError = this.handleApiError.bind(this);
     this.loadFromServer = this.loadFromServer.bind(this);
     this.state = {
-      pollingInterval: 20000,
+      pollingInterval: 10000,
       metrics: {},
       multiclusterExists: false,
       pendingRequests: false,

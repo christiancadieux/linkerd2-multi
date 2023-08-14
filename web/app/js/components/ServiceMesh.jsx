@@ -80,7 +80,7 @@ class ServiceMesh extends React.Component {
     this.api = props.api;
 
     this.state = {
-      pollingInterval: 20000,
+      pollingInterval: 10000,
       components: [],
       extensions: [],
       nsStatuses: [],

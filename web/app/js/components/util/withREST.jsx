@@ -29,7 +29,7 @@ const withREST = (WrappedComponent, componentPromises, options = {}) => {
 
     getInitialState() {
       return {
-        pollingInterval: 20000, // TODO: poll based on metricsWindow size
+        pollingInterval: 10000, // TODO: poll based on metricsWindow size
         data: [],
         pendingRequests: false,
         loading: true,

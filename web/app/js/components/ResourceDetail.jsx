@@ -66,7 +66,7 @@ export class ResourceDetailBase extends React.Component {
       resourceType: resource.type,
       lastMetricReceivedTime: Date.now(),
       isTcpOnly: false, // whether this resource only has TCP traffic
-      pollingInterval: 20000,
+      pollingInterval: 10000,
       resourceMetrics: [],
       podMetrics: [], // metrics for all pods whose owner is this resource
       upstreamMetrics: {}, // metrics for resources who send traffic to this resource

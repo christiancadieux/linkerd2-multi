@@ -44,10 +44,10 @@ import { faBars } from '@fortawesome/free-solid-svg-icons/faBars';
 import { faCloud } from '@fortawesome/free-solid-svg-icons/faCloud';
 import { faDungeon } from '@fortawesome/free-solid-svg-icons/faDungeon';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons/faExternalLinkAlt';
-import { faMicroscope } from '@fortawesome/free-solid-svg-icons/faMicroscope';
-import { faRandom } from '@fortawesome/free-solid-svg-icons/faRandom';
+// import { faMicroscope } from '@fortawesome/free-solid-svg-icons/faMicroscope';
+// import { faRandom } from '@fortawesome/free-solid-svg-icons/faRandom';
 import { faSmile } from '@fortawesome/free-regular-svg-icons/faSmile';
-import { faStream } from '@fortawesome/free-solid-svg-icons/faStream';
+// import { faStream } from '@fortawesome/free-solid-svg-icons/faStream';
 import { faPuzzlePiece } from '@fortawesome/free-solid-svg-icons/faPuzzlePiece';
 import grey from '@material-ui/core/colors/grey';
 import { processSingleResourceRollup } from './util/MetricUtils.jsx';
@@ -482,9 +482,6 @@ class NavigationBase extends React.Component {
         }
         <Divider />
         <MenuList>
-          <Typography variant="button" component="div" className={classes.sidebarHeading}>
-            <Trans>sidebarHeadingCluster</Trans>
-          </Typography>
           { this.menuItem('/namespaces', <Trans>menuItemNamespaces</Trans>, namespaceIcon) }
 
           { this.menuItem(
@@ -507,7 +504,7 @@ class NavigationBase extends React.Component {
           id="namespace-autocomplete"
           onClick={NavigationBase.handleAutocompleteClick}
           disableClearable
-          value={{ name: formattedNamespaceName.toUpperCase() }}
+          value={{ name: formattedNamespaceName }}
           options={filteredNamespaces}
           autoSelect
           getOptionSelected={option => option.name === selectedNamespace}
@@ -537,10 +534,6 @@ class NavigationBase extends React.Component {
           handleConfirmNamespaceChange={this.handleConfirmNamespaceChange} />
 
         <MenuList>
-          <Typography variant="button" component="div" className={classes.sidebarHeading}>
-            <Trans>sidebarHeadingWorkloads</Trans>
-          </Typography>
-
           { this.menuItem(`/namespaces/${selectedNamespace}/cronjobs`, <Trans>menuItemCronJobs</Trans>, cronJobIcon) }
 
           { this.menuItem(`/namespaces/${selectedNamespace}/daemonsets`, <Trans>menuItemDaemonSets</Trans>, daemonsetIcon) }
@@ -559,20 +552,11 @@ class NavigationBase extends React.Component {
 
           { this.menuItem(`/namespaces/${selectedNamespace}/statefulsets`, <Trans>menuItemStatefulSets</Trans>, statefulSetIcon) }
         </MenuList>
-
         <Divider />
         <MenuList>
           <Typography variant="button" component="div" className={classes.sidebarHeading}>
             <Trans>sidebarHeadingTools</Trans>
           </Typography>
-
-          { this.menuItem('/tap', <Trans>menuItemTap</Trans>, <FontAwesomeIcon icon={faMicroscope} className={classes.shrinkIcon} />) }
-          { this.menuItem('/top', <Trans>menuItemTop</Trans>, <FontAwesomeIcon icon={faStream} className={classes.shrinkIcon} />) }
-          { this.menuItem('/routes', <Trans>menuItemRoutes</Trans>, <FontAwesomeIcon icon={faRandom} className={classes.shrinkIcon} />) }
-
-        </MenuList>
-        <Divider />
-        <MenuList>
           { this.menuItem(
             '/community',
             <Trans>menuItemCommunity</Trans>,
