@@ -203,7 +203,7 @@ const ApiHelpers = (pathPrefix, defaultMetricsWindow = '1m') => {
     } else {
       const lsid = GetCookie('lsid');
       if (lsid) {
-        console.log('got cookie', lsid);
+        // console.log('got cookie', lsid);
         resourceUrl += `&lsid=${lsid}`;
       }
     }
