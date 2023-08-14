@@ -125,6 +125,13 @@ const styles = theme => {
       width: `${navLogoWidth}px`,
       transition: enteringFn(['margin', 'opacity']),
     },
+    linkerdNavLogo2: {
+      margin: 'auto',
+      color: 'white',
+      fontSize: '24px',
+      width: `${navLogoWidth}px`,
+      transition: enteringFn(['margin', 'opacity']),
+    },
     linkerdMobileLogo: {
       width: `${navLogoWidth}px`,
     },
@@ -475,8 +482,8 @@ class NavigationBase extends React.Component {
       <div>
         { !mobileSidebarOpen &&
           <div className={classes.navToolbar}>
-            <div className={classes.linkerdNavLogo}>
-              <Link to="/namespaces">{linkerdWordLogo}</Link>
+            <div className={classes.linkerdNavLogo2}>
+              <Trans>rdeiLinkerd</Trans>
             </div>
           </div>
         }
